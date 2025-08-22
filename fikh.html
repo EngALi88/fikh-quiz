@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>اختبار: كتاب الصلاة – الفقه الميسّر (70 سؤال)</title>
+  <style>
+    :root{--gap:14px;--radius:16px;font-family: system-ui, Tahoma, Arial, "Segoe UI", sans-serif}
+    body{margin:0;background:#0b1220;color:#eaf0ff}
+    .wrap{max-width:900px;margin:auto;padding:24px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:var(--gap);flex-wrap:wrap}
+    h1{font-size:clamp(20px,3vw,28px);margin:0}
+    .card{background:#111a2e;border:1px solid #233352;border-radius:var(--radius);padding:18px;margin-top:var(--gap);box-shadow:0 8px 24px rgba(0,0,0,.25)}
+    .muted{color:#a9b6d3}
+    button{border:0;border-radius:14px;padding:12px 16px;font-weight:700;cursor:pointer}
+    .primary{background:#4f8cff;color:white}
+    .danger{background:#e34848;color:white}
+    .ghost{background:transparent;border:1px solid #2a3a5a;color:#cfe0ff}
+    .q{margin:16px 0;padding:16px;background:#0d1730;border:1px solid #233352;border-radius:12px}
+    .q h3{margin:0 0 10px;font-size:18px}
+    .opt{display:block;padding:10px 12px;margin:8px 0;border-radius:12px;border:1px solid #2a3a5a;background:#0b1530}
+    .opt input{margin-left:8px}
+    .flex{display:flex;gap:var(--gap);align-items:center;flex-wrap:wrap}
+    .timer{font-weight:800;font-variant-numeric:tabular-nums;background:#0d1c39;border:1px solid #2a3a5a;border-radius:12px;padding:10px 14px}
+    .hidden{display:none}
+    .footer{margin-top:18px;display:flex;justify-content:space-between;align-items:center;gap:var(--gap)}
+    .note{font-size:13px;color:#9fb3d9}
+    .ok{color:#9ef09e}
+    .err{color:#ff9b9b}
+    .grid{display:grid;grid-template-columns:1fr;gap:var(--gap)}
+    @media(min-width:800px){.grid{grid-template-columns:1fr 1fr}}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{padding:8px;border-bottom:1px solid #274163}
+    .pill{padding:4px 8px;border-radius:999px;background:#142548;border:1px solid #274163;color:#cfe0ff;font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>بسم الله الرحمن الرحيم – اختبار «كتاب الصلاة» من <span class="muted">الفقه الميسّر</span></h1>
+      <div class="timer" id="timer">--:--:--</div>
+    </header>
+
+    <div class="card" id="intro">
+      <p class="muted">يرجى إدخال اسمك فقط ثم ابدأ. الوقت الكلي <strong>٩٠ دقيقة</strong>. لن تظهر لك الإجابات الصحيحة بعد الإرسال.</p>
+      <div class="flex">
+        <input id="studentName" placeholder="الاسم الكامل" style="flex:1;min-width:220px;padding:12px;border-radius:12px;border:1px solid #2a3a5a;background:#0b1530;color:#eaf0ff"/>
+        <button class="primary" id="startBtn">ابدأ الاختبار</button>
+      </div>
+      <p class="note">هذا الاختبار مخصص للمراجعة من كتاب «الفقه الميسّر في ضوء الكتاب والسنة» – باب الصلاة.</p>
+    </div>
+
+    <div class="card hidden" id="quiz"></div>
+
+    <div class="card hidden" id="submitPane">
+      <div class="footer">
+        <span class="note">تأكد من إجابتك على جميع الأسئلة قبل الإرسال.</span>
+        <div class="flex">
+          <button class="ghost" id="reviewBtn">مراجعة عشوائية 5 أسئلة</button>
+          <button class="primary" id="submitBtn">إرسال الإجابات</button>
+        </div>
+      </div>
+      <div class="note" id="progressNote"></div>
+    </div>
+
+    <div class="card hidden" id="done">
+      <h2>تم استلام إجاباتك ✅</h2>
+      <p class="muted">جزاك الله خيرًا. تم حفظ المحاولة. لن تُعرض الإجابات الصحيحة هنا.</p>
+      <p class="note">يمكنك إغلاق الصفحة الآن.</p>
+    </div>
+
+    <!-- لوحة المشرف -->
+    <div class="card hidden" id="admin">
+      <div class="flex" style="justify-content:space-between">
+        <h2>لوحة المشرف – النتائج</h2>
+        <span class="pill" id="adminCount">0 محاولات</span>
+      </div>
+      <div class="grid">
+        <div>
+          <h3>الإجابات الصحيحة (مختصرة)</h3>
+          <div id="answerKey" class="note"></div>
+        </div>
+        <div>
+          <h3>تنزيل ملف CSV</h3>
+          <button class="ghost" id="downloadCsv">تنزيل النتائج</button>
+        </div>
+      </div>
+      <div style="overflow:auto;margin-top:12px">
+        <table id="resultTable">
+          <thead><tr><th>الاسم</th><th>التاريخ</th><th>الدرجة/70</th><th>النسبة</th><th>تفاصيل</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<script>
+// === إعدادات المشرف ===
+const ADMIN_KEY = "CHANGE_ME_SECRET"; // ضع كلمة سر بسيطة، ثم أرسل الرابط بصيغة ?admin=CHANGE_ME_SECRET لتفتح لوحة المشرف
+const ENDPOINT_URL = ""; // ضع رابط Web App من Google Apps Script إن رغبت بحفظ النتائج في Google Sheets. اتركه فارغًا للعمل دون خادم
+
+// زمن الاختبار: 90 دقيقة (بالثواني)
+const TOTAL_SECONDS = 90 * 60;
+
+// === بنك الأسئلة (70 سؤالاً) ===
+// كل سؤال: {q: 'النص', choices: ['أ','ب','ج','د'], answer: 0-3, ref: 'مرجع مختصر'}
+const QUESTIONS = [
+  // التعريف والفضل والوجوب
+  {q:'المعنى اللغوي للصلاة هو:',choices:['الدعاء','الطهارة','الذكر','السجود'],answer:0,ref:'التعريف – shamela'},
+  {q:'التعريف الشرعي للصلاة هو أنها:',choices:['أدعية مطلقة','عبادة ذات أقوال وأفعال مخصوصة تفتتح بالتكبير وتختم بالتسليم','ذكر بعد الأذان','قراءة القرآن فقط'],answer:1,ref:'التعريف – shamela'},
+  {q:'حكم الصلوات الخمس:',choices:['فرض كفاية','فرض عين','سنة مؤكدة','مستحب'],answer:1,ref:'الوجوب – shamela'},
+  {q:'من دلائل وجوب الصلاة قوله تعالى:',choices:['وأقيموا الصلاة وآتوا الزكاة','اذكروا الله كثيرًا','إنما المشركون نجس','وقاتلوا في سبيل الله'],answer:0,ref:'الوجوب – القرآن'},
+  {q:'من فضل الصلاة أنها:',choices:['تسقط الذنوب كلها مطلقًا','تنهى عن الفحشاء والمنكر','غير مرتبطة بالإيمان','لا أثر لها في الحياة'],answer:1,ref:'الفضل – القرآن'},
+
+  // الأذان والإقامة
+  {q:'الأذان شُرع لأجل:',choices:['افتتاح الصلاة','الإعلام بدخول الوقت','التذكير بالذكر','إقامة الصفوف'],answer:1,ref:'الأذان – الفقه الميسر'},
+  {q:'حكم الأذان للصلوات الخمس:',choices:['فرض عين','فرض كفاية','مستحب غير مؤكد','بدعة'],answer:1,ref:'الأذان – الفقه الميسر'},
+  {q:'الإقامة معناها:',choices:['الإخبار بدخول الوقت','نداء خاص للشروع في الصلاة','دعاء بعد الصلاة','ذكر قبل الخطبة'],answer:1,ref:'الإقامة – الفقه الميسر'},
+  {q:'من سنن المؤذن:',choices:['ترك الالتفات','التثويب في الفجر (الصلاة خيرٌ من النوم)','الهمس بالأذان','ترك الطهارة'],answer:1,ref:'الأذان – السنن'},
+  {q:'المجيب بعد سماع الأذان يقول:',choices:['لا شيء','مثل ما يقول المؤذن ثم يصلي على النبي ﷺ','يدعو بدعاء القنوت','يقرأ الفاتحة'],answer:1,ref:'الأذان – الآداب'},
+
+  // مواقيت الصلاة
+  {q:'وقت الظهر يبدأ:',choices:['من زوال الشمس','من اصفرار الشمس','من طلوع الفجر الصادق','من غروب الشمس'],answer:0,ref:'المواقيت'},
+  {q:'وقت العصر الاختياري ينتهي عند:',choices:['اصفرار الشمس','غروب الشمس','منتصف الليل','طلوع الفجر'],answer:0,ref:'المواقيت'},
+  {q:'وقت المغرب يبدأ:',choices:['عند الشفق الأحمر','بعد الأذان مباشرة بلا علامة كونية','بغروب الشمس','بزوال الشمس'],answer:2,ref:'المواقيت'},
+  {q:'وقت العشاء يدخل:',choices:['بغروب الشفق الأحمر','بعد نصف الليل','بعد طلوع الفجر','بعد صلاة المغرب بنصف ساعة'],answer:0,ref:'المواقيت'},
+  {q:'وقت الفجر الصادق هو:',choices:['بياض معترض في الأفق','بياض مستطيل للأعلى','ضوء الشمس بعد طلوعها','ضوء القمر'],answer:0,ref:'المواقيت'},
+
+  // شروط الصلاة
+  {q:'أيّ التالي شرط لصحة الصلاة:',choices:['الطهارة من الحدث','الجلوس للتشهد الأول','التأمين بعد الفاتحة','القنوت'],answer:0,ref:'الشروط'},
+  {q:'ستر العورة للرجل في الصلاة يكون:',choices:['ما بين السرة والركبة','ستر الكتفين فقط','ستر جميع البدن','السرة فقط'],answer:0,ref:'الشروط'},
+  {q:'استقبال القبلة يسقط عن:',choices:['المريض مطلقًا','المسافر مطلقًا','العاجز ومن في شدة الخوف','لا يسقط أبدًا'],answer:2,ref:'الشروط'},
+  {q:'من شروط الصلاة أيضًا:',choices:['النية','القنوت','التسبيح في الركوع','الدعاء بعد السلام'],answer:0,ref:'الشروط'},
+  {q:'الطهارة تشمل:',choices:['طهارة الحدث فقط','طهارة الخبث فقط','الحدث والخبث','لا علاقة لها بالصلاة'],answer:2,ref:'الشروط'},
+
+  // أركان الصلاة (14)
+  {q:'من أركان الصلاة:',choices:['النية','سجود السهو','القنوت','دعاء الاستفتاح'],answer:0,ref:'الأركان'},
+  {q:'تكبيرة الإحرام:',choices:['سنة','واجب','ركن','مكروه'],answer:2,ref:'الأركان'},
+  {q:'قراءة الفاتحة:',choices:['سنة','واجب للإمام فقط','ركن على المأموم والإمام والمنفرد','لا تجب على المأموم'],answer:2,ref:'الأركان'},
+  {q:'الركوع ركن ومعناه:',choices:['انحناء يسير بلا طمأنينة','انحناء يصدق معه الركوع مع الطمأنينة','جلسة خفيفة','سجدة واحدة'],answer:1,ref:'الأركان'},
+  {q:'الرفع من الركوع مع الاعتدال:',choices:['سنة','واجب','ركن','مكروه'],answer:2,ref:'الأركان'},
+  {q:'السجود على:',choices:['الجبهة فقط','أعضاء السجود السبعة','الكفين فقط','أي موضع'],answer:1,ref:'الأركان'},
+  {q:'الجلوس بين السجدتين مع الطمأنينة:',choices:['واجب','ركن','سنة','غير مشروع'],answer:1,ref:'الأركان'},
+  {q:'الطمأنينة في الأركان:',choices:['سنة','لا تُشترط','ركن','مكروه'],answer:2,ref:'الأركان'},
+  {q:'التشهد الأخير:',choices:['سنة','واجب فقط','ركن','غير مشروع'],answer:2,ref:'الأركان'},
+  {q:'الجلوس للتشهد الأخير:',choices:['سنة','ركن','واجب','مستحب'],answer:1,ref:'الأركان'},
+  {q:'الصلاة على النبي ﷺ في التشهد الأخير:',choices:['سنة','واجب','ركن','مكروه'],answer:2,ref:'الأركان'},
+  {q:'الترتيب بين الأركان:',choices:['سنة','واجب','ركن','غير معتبر'],answer:2,ref:'الأركان'},
+  {q:'التسليم (التسليمة الأولى):',choices:['سنة','ركن','واجب','مكروه'],answer:1,ref:'الأركان'},
+  {q:'النية محلها:',choices:['اللسان','القلب','كلاهما واجب','لا علاقة لها'],answer:1,ref:'الأركان/النية'},
+
+  // واجبات الصلاة المشهورة
+  {q:'من واجبات الصلاة:',choices:['التكبيرات غير تكبيرة الإحرام','دعاء الاستفتاح','القنوت','جلسة الاستراحة'],answer:0,ref:'الواجبات'},
+  {q:'قول «سمع الله لمن حمده» يكون:',choices:['على الإمام والمأموم','على الإمام والمنفرد','على المأموم فقط','ليس من الصلاة'],answer:1,ref:'الواجبات'},
+  {q:'قول «ربنا ولك الحمد» يكون:',choices:['على الإمام فقط','على المأموم والمنفرد','ليس مشروعًا','للمنفرد فقط'],answer:1,ref:'الواجبات'},
+  {q:'التسبيح في الركوع والسجود أقلّه:',choices:['مرة واحدة','ثلاث مرات واجبة','خمس مرات','ليس مشروعًا'],answer:0,ref:'الواجبات'},
+  {q:'التشهد الأول:',choices:['ركن','واجب','سنة','مكروه تركه'],answer:1,ref:'الواجبات'},
+
+  // السنن والمكروهات
+  {q:'رفع اليدين عند تكبيرة الإحرام:',choices:['سنة','واجب','ركن','مكروه'],answer:0,ref:'السنن'},
+  {q:'دعاء الاستفتاح:',choices:['سنة','واجب','بدعة','ركن'],answer:0,ref:'السنن'},
+  {q:'من مكروهات الصلاة:',choices:['وضع اليمنى على اليسرى على الصدر','العبث وكثرة الحركة بلا حاجة','الخشوع','النظر إلى موضع السجود'],answer:1,ref:'المكروهات'},
+  {q:'قراءة سور بعد الفاتحة في الركعتين الأُولَيَيْن:',choices:['واجبة','سنة','بدعة','ركن'],answer:1,ref:'السنن'},
+  {q:'الالتفات اليسير في الصلاة:',choices:['يبطل الصلاة مطلقًا','مكروه إن كان لغير حاجة','سنة','واجب'],answer:1,ref:'المكروهات'},
+
+  // مبطلات الصلاة
+  {q:'من مبطلات الصلاة:',choices:['الضحك بصوت','البكاء من خشية الله','الحركة اليسيرة لحاجة','نسيان التشهد الأول'],answer:0,ref:'المبطلات'},
+  {q:'الكلام عمدًا لغير مصلحة الصلاة:',choices:['لا يؤثر','مكروه فقط','يبطل الصلاة','يستحب'],answer:2,ref:'المبطلات'},
+  {q:'الأكل والشرب عمدًا في الفريضة:',choices:['لا بأس','يبطل الصلاة','مكروه','سنة'],answer:1,ref:'المبطلات'},
+  {q:'ترك ركن سهوًا ولم يذكره إلا بعد ركعة:',choices:['يسجد للسهو فقط','تبطل الصلاة ولا علاج','يعود إلى الركن ويكمل ويأتي بسجود السهو','يتصدق'],answer:2,ref:'الأركان/السهو'},
+  {q:'زيادة ركعة عمدًا:',choices:['لا شيء','يبطل الصلاة','سجود سهو يكفي','مكروه'],answer:1,ref:'المبطلات'},
+
+  // سجود السهو
+  {q:'سجود السهو مشروع لـ:',choices:['الزيادة والنقص والشك','النسيان فقط','الزيادة فقط','لا يشرع'],answer:0,ref:'سجود السهو'},
+  {q:'موضع سجود السهو في الغالب عند:',choices:['قبل السلام أو بعده بحسب السبب','بعد السلام فقط','قبل السلام فقط','ليس له موضع'],answer:0,ref:'سجود السهو'},
+  {q:'من ترك واجبًا سهوًا:',choices:['تبطل صلاته','يسجد للسهو ويجبره','لا شيء عليه','يعيد الصلاة فورًا'],answer:1,ref:'سجود السهو'},
+  {q:'الشك المتساوي في عدد الركعات:',choices:['يبني على اليقين وهو الأقل','يبني على الظن الغالب','يلغي الصلاة','لا حكم له'],answer:0,ref:'سجود السهو'},
+  {q:'إن غلب على ظنه عدد الركعات:',choices:['يبني على الأقل','يبني على الظن ويُسَنّ السجود','يعيد الصلاة','يسلم مباشرة'],answer:1,ref:'سجود السهو'},
+
+  // صلاة الجماعة والإمامة
+  {q:'صلاة الجماعة في الحضر للرجال:',choices:['سنة مؤكدة','فرض كفاية','فرض عين على الصحيح عند جمع من أهل العلم','مباحة'],answer:2,ref:'الجماعة'},
+  {q:'وقوف المأموم الواحد مع الإمام يكون:',choices:['عن يساره','خلفه','عن يمينه','أمامه'],answer:2,ref:'الجماعة'},
+  {q:'إذا أدرك المأموم الإمام راكعًا:',choices:['يركع فورًا وتحصُل له الركعة','ينتظر حتى يقوم الإمام','لا يركع حتى يقرأ الفاتحة','تبطل صلاته'],answer:0,ref:'الجماعة'},
+  {q:'تسوية الصفوف وسدّ الخلل:',choices:['مستحب فقط','من تمام الصلاة ويُندب الحرص عليه','بدعة','لا علاقة له'],answer:1,ref:'الجماعة'},
+  {q:'إذا سبق المأموم إمامه عمدًا في ركن:',choices:['لا شيء عليه','تبطل صلاته عند من شدد','سجود سهو يكفي','مكروه فقط'],answer:1,ref:'الجماعة'},
+
+  // أحكام القراءة
+  {q:'الجهر في الفجر والمغرب والعشاء للإمام:',choices:['واجب','سنة','بدعة','لا يشرع'],answer:1,ref:'القراءة'},
+  {q:'الإسرار في الظهر والعصر والمنفرد ليلًا ونهارًا:',choices:['واجب','سنة','بدعة','ركن'],answer:1,ref:'القراءة'},
+  {q:'قراءة المأموم خلف الإمام في الجهرية:',choices:['لا يقرأ مطلقًا','يقرأ الفاتحة في سكتات أو سرًا عند من قال به','يجب أن يرفع صوته','يقرأ بعد الركوع'],answer:1,ref:'القراءة/خلاف'},
+  {q:'قراءة ما تيسر بعد الفاتحة في الركعتين الأوليين:',choices:['ركن','واجب','سنة ثابتة','بدعة'],answer:2,ref:'السنن'},
+  {q:'قول آمين بعد الفاتحة:',choices:['سنة مؤكدة','واجب','بدعة','لا يشرع'],answer:0,ref:'السنن'},
+
+  // أعذار الجمع والقصر
+  {q:'قصر الصلاة الرباعية للمسافر:',choices:['غير مشروع','سنة ثابتة ورخصة مؤكدة','واجب','بدعة'],answer:1,ref:'السفر'},
+  {q:'أقل مسافة يُعتبر فيها السفر عند كثير من أهل العلم تقريبًا:',choices:['١ كم','٨٠-٨٣ كم تقريبًا','٢٠ كم','١٥ كم'],answer:1,ref:'السفر'},
+  {q:'الجمع بين الصلاتين يُشرع في:',choices:['السفر والمطر ونحوه والحاجة','كل حال','الجمعة فقط','المرض فقط'],answer:0,ref:'الجمع'},
+  {q:'صفة القصر:',choices:['تصلى الظهر والعصر والعشاء ركعتين','تسقط الصلاة','تصلى ثلاث ركعات','يقصر المغرب إلى ركعتين'],answer:0,ref:'القصر'},
+  {q:'المسافر إذا صلى خلف إمام مقيم:',choices:['يقصر معه','يتم أربعًا','لا يصلي','يؤخر الصلاة'],answer:1,ref:'السفر'},
+
+  // صلاة الجمعة
+  {q:'الجمعة بدل عن:',choices:['الظهر','العصر','العشاء','المغرب'],answer:0,ref:'الجمعة'},
+  {q:'خطبتا الجمعة حكمهما:',choices:['بدعة','سنة','شرط لصحة الجمعة','غير لازمتين'],answer:2,ref:'الجمعة'},
+  {q:'عدد ركعات الجمعة:',choices:['ركعتان','أربع ركعات','ثلاث','واحدة'],answer:0,ref:'الجمعة'},
+  {q:'من أدرك مع الإمام ركعة من الجمعة:',choices:['يتمها جمعة','يتمها ظهرًا أربعًا','يعيد الصلاة','لا تُقبل'],answer:1,ref:'الجمعة/خلاف معروف'},
+  {q:'تحريم البيع بعد النداء الثاني للجمعة:',choices:['لا أصل له','ثابت بالنص في سورة الجمعة','سنة','مكروه فقط'],answer:1,ref:'الجمعة – القرآن'},
+
+  // مواضع النهي عن الصلاة
+  {q:'من الأوقات التي نُهي عن الصلاة فيها:',choices:['بعد الفجر حتى تطلع الشمس','بعد العصر حتى تغرب الشمس','عند طلوع الشمس حتى ترتفع','جميع ما سبق'],answer:3,ref:'أوقات النهي'},
+  {q:'الصلاة عند قيام الشمس في كبد السماء:',choices:['مستحبة','مكروهة فقط','من أوقات النهي','لا حكم خاص'],answer:2,ref:'أوقات النهي'},
+  {q:'تحية المسجد في وقت النهي:',choices:['لا تُشرع مطلقًا','تُشرع على القول الراجح لأنها من ذوات الأسباب','بدعة','يُنهى عنها مطلقًا'],answer:1,ref:'أوقات النهي/ذوات الأسباب'},
+
+  // أحكام متفرقة
+  {q:'من صلى بلا طمأنينة:',choices:['صلاته صحيحة مع الكراهة','لا تصح صلاته لأنه ترك ركنًا','تسقط عنه','يجبرها بسجود السهو'],answer:1,ref:'الأركان'},
+  {q:'وضع اليد اليمنى على اليسرى في القيام:',choices:['سنة','واجب','بدعة','لا أصل لها'],answer:0,ref:'السنن'},
+  {q:'جلسة الاستراحة:',choices:['واجبة دائمًا','سنة عند الحاجة','بدعة','ركن'],answer:1,ref:'السنن'},
+  {q:'قراءة الفاتحة على الجنازة:',choices:['غير مشروعة','مشروعة وهي ركن القراءة فيها عند من قال','بدعة','لا تقرأ مطلقًا'],answer:1,ref:'الجنازة/خارج نطاق الاختبار ولكن مفيدة'},
+  {q:'من أدرك التشهد الأخير مع الإمام:',choices:['تحسب له الجماعة ويتم ما فاته','لا تُحسب له الجماعة','يعيد الصلاة جماعة أخرى','ينتظر إقامة أخرى'],answer:0,ref:'الجماعة'},
+
+  // متابعة الإمام
+  {q:'المأموم يتابع الإمام:',choices:['يسبق الإمام دائمًا','يوافقه أو يسبقه لا بأس','يتابعه ولا يسبقه ولا يوافقه في الأركان','يتأخر دائمًا'],answer:2,ref:'الجماعة'},
+  {q:'التخلف عن الإمام ركنًا كاملًا بلا عذر:',choices:['لا يؤثر','يبطل صلاة المأموم على قول قوي','مكروه','سنة'],answer:1,ref:'الجماعة'},
+  {q:'من كبّر للإحرام ثم شك في النية:',choices:['يعيد الصلاة مباشرة','لا يلتفت للشك بعد الدخول ويكمل','يلغي تكبيرته','يسلم فورًا'],answer:1,ref:'النية'},
+  {q:'العمل اليسير في الصلاة كحمل صبي:',choices:['مبطل','لا يجوز','يجوز للحاجة ولا يبطل','واجب'],answer:2,ref:'الحاجة'},
+  {q:'البصاق إلى القبلة في المسجد:',choices:['مباح','مكروه','محرم','لا حكم'],answer:2,ref:'الآداب'},
+];
+
+// تحقق من العدد
+if(QUESTIONS.length !== 70){console.warn("عدد الأسئلة الحالي:", QUESTIONS.length)}
+
+// حالة التطبيق
+let timeLeft = TOTAL_SECONDS;
+let timerId = null;
+let started = false;
+let answers = new Array(QUESTIONS.length).fill(null);
+
+const $ = sel => document.querySelector(sel);
+const quizEl = $('#quiz');
+const introEl = $('#intro');
+const submitPane = $('#submitPane');
+const timerEl = $('#timer');
+const doneEl = $('#done');
+const adminEl = $('#admin');
+
+function formatTime(s){
+  const h = Math.floor(s/3600).toString().padStart(2,'0');
+  const m = Math.floor((s%3600)/60).toString().padStart(2,'0');
+  const ss = Math.floor(s%60).toString().padStart(2,'0');
+  return `${h}:${m}:${ss}`;
+}
+
+function startTimer(){
+  timerEl.textContent = formatTime(timeLeft);
+  timerId = setInterval(()=>{
+    timeLeft--; timerEl.textContent = formatTime(Math.max(0,timeLeft));
+    if(timeLeft<=0){ clearInterval(timerId); autoSubmit(); }
+  },1000);
+}
+
+function renderQuiz(){
+  const html = QUESTIONS.map((q,i)=>{
+    const opts = q.choices.map((c,j)=>`<label class="opt"><input type="radio" name="q${i}" value="${j}"> ${c}</label>`).join('');
+    return `<div class="q"><h3>س${i+1}. ${q.q}</h3>${opts}</div>`;
+  }).join('');
+  quizEl.innerHTML = html;
+  quizEl.classList.remove('hidden');
+  submitPane.classList.remove('hidden');
+  $('#progressNote').textContent = `أجبت على 0 من ${QUESTIONS.length}`;
+  quizEl.addEventListener('change', (e)=>{
+    const name = e.target.getAttribute('name');
+    if(!name) return; const idx = parseInt(name.replace('q',''));
+    answers[idx] = parseInt(e.target.value);
+    const done = answers.filter(v=>v!==null).length;
+    $('#progressNote').textContent = `أجبت على ${done} من ${QUESTIONS.length}`;
+  });
+}
+
+function scoreAnswers(){
+  let score = 0; const detail=[];
+  QUESTIONS.forEach((q,i)=>{
+    const correct = q.answer;
+    const given = answers[i];
+    const ok = (given===correct);
+    if(ok) score++;
+    detail.push({i:i+1,correct, given, ok});
+  });
+  return {score, detail};
+}
+
+async function submitToServer(payload){
+  if(!ENDPOINT_URL) return {ok:true, local:true};
+  try{
+    const res = await fetch(ENDPOINT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    return {ok:res.ok};
+  }catch(e){
+    console.error(e); return {ok:false,error:e.message};
+  }
+}
+
+async function finalSubmit(){
+  const name = $('#studentName').value.trim() || 'مشارك مجهول';
+  const {score, detail} = scoreAnswers();
+  const payload = {name, score, total: QUESTIONS.length, detail, timestamp: new Date().toISOString()};
+  await submitToServer(payload);
+  // لا نعرض الدرجة للممتحَن
+  quizEl.classList.add('hidden');
+  submitPane.classList.add('hidden');
+  doneEl.classList.remove('hidden');
+  clearInterval(timerId);
+}
+
+function autoSubmit(){
+  // عند انتهاء الوقت – تسليم تلقائي
+  finalSubmit();
+}
+
+$('#startBtn').addEventListener('click', ()=>{
+  if(started) return; started=true;
+  if(!$('#studentName').value.trim()){
+    alert('يرجى كتابة الاسم أولًا'); return;
+  }
+  introEl.classList.add('hidden');
+  renderQuiz();
+  startTimer();
+});
+
+$('#submitBtn').addEventListener('click', ()=>{
+  if(confirm('هل تريد إرسال الإجابات الآن؟ لن تتمكن من التعديل بعد الإرسال.')) finalSubmit();
+});
+
+$('#reviewBtn').addEventListener('click', ()=>{
+  // تمرير للمساعدة على المراجعة
+  const pending = answers.map((v,i)=>v===null?i:null).filter(v=>v!==null);
+  if(pending.length===0){ alert('أحسنت! أجبت على كل الأسئلة.'); return; }
+  const pick = pending.sort(()=>0.5-Math.random()).slice(0,5);
+  const first = pick[0];
+  document.querySelector(`[name="q${first}"]`)?.scrollIntoView({behavior:'smooth',block:'center'});
+});
+
+// === لوحة المشرف عبر ?admin=KEY ===
+(function adminGate(){
+  const params = new URLSearchParams(location.search);
+  const admin = params.get('admin');
+  if(admin && admin === ADMIN_KEY){
+    // عرض لوحة النتائج المحلية (للإظهار فقط). في الوضع الحقيقي ستقرأ من Google Sheet عبر Apps Script.
+    adminEl.classList.remove('hidden');
+    introEl.classList.add('hidden');
+    quizEl.classList.add('hidden');
+    submitPane.classList.add('hidden');
+    doneEl.classList.add('hidden');
+
+    // مفتاح الإجابات
+    $('#answerKey').textContent = QUESTIONS.map((q,i)=>`س${i+1}: ${String.fromCharCode(0x0660 + (q.answer+1))}`).join('  |  ');
+
+    // استرجاع نتائج محفوظة في localStorage كمحاكاة (عند عدم وجود خادم)
+    // ملاحظة: التطبيق الفعلي يُفضل Google Sheets – انظر التعليمات في أسفل الملف.
+    const saved = JSON.parse(localStorage.getItem('QUIZ_RESULTS')||'[]');
+    renderAdminTable(saved);
+
+    $('#downloadCsv').addEventListener('click', ()=>{
+      const rows = [['الاسم','التاريخ','الدرجة','النسبة','الإجابات']].concat(
+        saved.map(r=>[r.name,r.timestamp,r.score+"/"+r.total,(r.score/r.total*100).toFixed(2)+'%', r.detail.map(d=>d.given==null?'':d.given+1).join('|')])
+      );
+      const csv = rows.map(r=>r.map(x=>`"${(x??'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob(["\uFEFF"+csv],{type:'text/csv;charset=utf-8;'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'results.csv'; a.click();
+    });
+  }
+})();
+
+function renderAdminTable(data){
+  const tbody = document.querySelector('#resultTable tbody');
+  tbody.innerHTML = data.map(r=>{
+    const pct = ((r.score/r.total)*100).toFixed(2)+'%';
+    return `<tr><td>${r.name}</td><td>${new Date(r.timestamp).toLocaleString('ar-EG')}</td><td>${r.score}/${r.total}</td><td>${pct}</td><td><details><summary>عرض</summary>${r.detail.map(d=>`س${d.i}: ${d.ok?'✔️':'❌'} (اختار ${d.given==null?'-':d.given+1} / صحيح ${d.correct+1})`).join('<br>')}</details></td></tr>`
+  }).join('');
+  $('#adminCount').textContent = `${data.length} محاولات`;
+}
+
+// تخزين محلي احتياطي عند عدم وجود خادم
+async function backupLocal(payload){
+  const list = JSON.parse(localStorage.getItem('QUIZ_RESULTS')||'[]');
+  list.push(payload); localStorage.setItem('QUIZ_RESULTS', JSON.stringify(list));
+}
+
+// التفاف إرسال مع النسخ الاحتياطي المحلي
+(async function hookSubmission(){
+  const _finalSubmit = finalSubmit;
+  finalSubmit = async function(){
+    const name = $('#studentName').value.trim() || 'مشارك مجهول';
+    const {score, detail} = scoreAnswers();
+    const payload = {name, score, total: QUESTIONS.length, detail, timestamp: new Date().toISOString()};
+    try{ await submitToServer(payload); }catch{}
+    await backupLocal(payload);
+    quizEl.classList.add('hidden'); submitPane.classList.add('hidden'); doneEl.classList.remove('hidden');
+    clearInterval(timerId);
+  }
+})();
+</script>
+
+<!-- ===================== تعليمات ربط Google Sheets (اختياري) =====================
+1) افتح https://script.google.com  ثم جديد > مشروع.
+2) الصق الشفرة التالية مكان الكود الافتراضي، واحفظ:
+
+function doPost(e){
+  var sheetId = 'PUT_SHEET_ID_HERE'; // أنشئ Google Sheet وخذ المعرف من الرابط
+  var ss = SpreadsheetApp.openById(sheetId);
+  var sh = ss.getSheetByName('responses') || ss.insertSheet('responses');
+  var body = JSON.parse(e.postData.contents);
+  var row = [new Date(), body.name, body.score, body.total, JSON.stringify(body.detail)];
+  sh.appendRow(row);
+  return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
+}
+
+3) من "نشر" اختر "تنفيذ كخدمة ويب" > الإصدار الجديد > الوصول: أي شخص يمتلك الرابط.
+4) انسخ رابط الويب وضعه في ENDPOINT_URL أعلى الصفحة.
+5) غيّر ADMIN_KEY وضعه في الرابط عند العرض: example.com/quiz.html?admin=كلمتك_السرية
+-->
+
+</body>
+</html>
